@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <title>Alien Ship vs Rocks</title>
   <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+    }
+
     canvas {
       display: block;
       background-color: black;
@@ -16,18 +22,18 @@
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
 
-    let bg = new Image();
-    bg.src = "assets/background.jpg";
+    const bg = new Image();
+    bg.src = "assets/background.jpg"; // Make sure this path is correct!
 
-    let ship = {
+    const ship = {
       x: canvas.width / 2 - 25,
       y: canvas.height - 100,
       width: 50,
       height: 50
     };
 
-    let rocks = [];
-    let lasers = [];
+    const rocks = [];
+    const lasers = [];
     let score = 0;
 
     function drawShip() {
@@ -52,28 +58,45 @@
     }
 
     function updateGame() {
-      ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+      if (bg.complete) {
+        ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+      } else {
+        // Fallback fill if image fails to load
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
       drawShip();
       drawRocks();
       drawLasers();
 
-      rocks.forEach(rock => rock.y += 2);
-      lasers.forEach(laser => laser.y -= 5);
+      // Move rocks
+      for (let i = rocks.length - 1; i >= 0; i--) {
+        rocks[i].y += 2;
+        if (rocks[i].y > canvas.height) rocks.splice(i, 1);
+      }
 
-      // Collision
-      lasers.forEach((laser, lIndex) => {
-        rocks.forEach((rock, rIndex) => {
-          let dx = laser.x - rock.x;
-          let dy = laser.y - rock.y;
-          let distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < rock.radius) {
-            rocks.splice(rIndex, 1);
-            lasers.splice(lIndex, 1);
+      // Move lasers
+      for (let i = lasers.length - 1; i >= 0; i--) {
+        lasers[i].y -= 5;
+        if (lasers[i].y < 0) lasers.splice(i, 1);
+      }
+
+      // Collision detection
+      for (let l = lasers.length - 1; l >= 0; l--) {
+        for (let r = rocks.length - 1; r >= 0; r--) {
+          const dx = lasers[l].x - rocks[r].x;
+          const dy = lasers[l].y - rocks[r].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < rocks[r].radius) {
+            rocks.splice(r, 1);
+            lasers.splice(l, 1);
             score += 10;
+            break;
           }
-        });
-      });
+        }
+      }
 
       requestAnimationFrame(updateGame);
     }
@@ -88,7 +111,7 @@
 
     function shootLaser() {
       lasers.push({
-        x: ship.x + ship.width / 2,
+        x: ship.x + ship.width / 2 - 2.5,
         y: ship.y
       });
     }
@@ -98,9 +121,12 @@
       ship.x = e.clientX - rect.left - ship.width / 2;
     });
 
-    setInterval(spawnRock, 1000);
-    setInterval(shootLaser, 300);
-    bg.onload = updateGame;
+    // Start game after short delay to ensure image has time to load
+    window.onload = () => {
+      setInterval(spawnRock, 1000);
+      setInterval(shootLaser, 300);
+      requestAnimationFrame(updateGame);
+    };
   </script>
 </body>
 </html>
