@@ -8,84 +8,37 @@
       margin: 0;
       overflow: hidden;
       background-color: black;
-      font-family: Arial, sans-serif;
     }
 
     canvas {
-      display: none;  /* Hide the canvas until the game starts */
+      display: block;
       background-color: black;
-    }
-
-    #startScreen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background-color: black;
-      z-index: 10;
-    }
-
-    #startButton {
-      padding: 20px 40px;
-      font-size: 32px;
-      background-color: yellow;
-      color: black;
-      border: none;
-      cursor: pointer;
-    }
-
-    #startButton:hover {
-      background-color: orange;
-    }
-
-    #scoreDisplay {
-      position: absolute;
-      top: 10px;
-      left: 20px;
-      font-size: 24px;
-      color: white;
-      z-index: 5;
-      display: none;
     }
   </style>
 </head>
 <body>
-  <div id="startScreen">
-    <h1 style="font-size: 64px; color: lime;">Alien Ship vs Rocks</h1>
-    <button id="startButton">START</button>
-  </div>
-
-  <div id="scoreDisplay">Score: 0</div>
-
   <canvas id="game" width="1920" height="919"></canvas>
 
   <script>
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
-    const startScreen = document.getElementById("startScreen");
-    const startButton = document.getElementById("startButton");
-    const scoreDisplay = document.getElementById("scoreDisplay");
+
+    if (!ctx) {
+      console.error("Failed to get canvas rendering context");
+    }
 
     const bg = new Image();
-    bg.src = "assets/background.jpg";  // Ensure your path is correct
+    bg.src = "assets/background.jpg";
 
     let bgLoaded = false;
-    let score = 0;
-    let gameStarted = false;
 
-    // Check if the background image has loaded
     bg.onload = () => {
       bgLoaded = true;
       console.log("Background image loaded.");
     };
 
     bg.onerror = () => {
-      console.warn("Background image failed to load.");
+      console.warn("Background image failed to load. Using fallback color.");
     };
 
     const ship = {
@@ -97,6 +50,7 @@
 
     const rocks = [];
     const lasers = [];
+    let score = 0;
 
     function drawShip() {
       ctx.fillStyle = "lime";
@@ -119,11 +73,8 @@
       }
     }
 
-    function drawScore() {
-      scoreDisplay.textContent = `Score: ${score}`;
-    }
-
     function updateGame() {
+      // Draw background
       if (bgLoaded) {
         ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
       } else {
@@ -134,7 +85,6 @@
       drawShip();
       drawRocks();
       drawLasers();
-      drawScore();
 
       // Update rocks
       for (let i = rocks.length - 1; i >= 0; i--) {
@@ -187,4 +137,16 @@
     }
 
     canvas.addEventListener("mousemove", (e) => {
-      const rect
+      const rect = canvas.getBoundingClientRect();
+      ship.x = e.clientX - rect.left - ship.width / 2;
+    });
+
+    // Start game after window fully loads
+    window.onload = () => {
+      setInterval(spawnRock, 1000);
+      setInterval(shootLaser, 300);
+      requestAnimationFrame(updateGame);
+    };
+  </script>
+</body>
+</html>
