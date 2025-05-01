@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Alien Ship vs Rocks</title>
   <style>
     body {
@@ -18,12 +18,28 @@
 </head>
 <body>
   <canvas id="game" width="1920" height="919"></canvas>
+
   <script>
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
 
+    if (!ctx) {
+      console.error("Failed to get canvas rendering context");
+    }
+
     const bg = new Image();
-    bg.src = "assets/background.jpg"; // Make sure this path is correct!
+    bg.src = "assets/background.jpg";
+
+    let bgLoaded = false;
+
+    bg.onload = () => {
+      bgLoaded = true;
+      console.log("Background image loaded.");
+    };
+
+    bg.onerror = () => {
+      console.warn("Background image failed to load. Using fallback color.");
+    };
 
     const ship = {
       x: canvas.width / 2 - 25,
@@ -43,25 +59,25 @@
 
     function drawRocks() {
       ctx.fillStyle = "red";
-      rocks.forEach(rock => {
+      for (let rock of rocks) {
         ctx.beginPath();
         ctx.arc(rock.x, rock.y, rock.radius, 0, Math.PI * 2);
         ctx.fill();
-      });
+      }
     }
 
     function drawLasers() {
       ctx.fillStyle = "yellow";
-      lasers.forEach(laser => {
+      for (let laser of lasers) {
         ctx.fillRect(laser.x, laser.y, 5, 15);
-      });
+      }
     }
 
     function updateGame() {
-      if (bg.complete) {
+      // Draw background
+      if (bgLoaded) {
         ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
       } else {
-        // Fallback fill if image fails to load
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
@@ -70,19 +86,23 @@
       drawRocks();
       drawLasers();
 
-      // Move rocks
+      // Update rocks
       for (let i = rocks.length - 1; i >= 0; i--) {
         rocks[i].y += 2;
-        if (rocks[i].y > canvas.height) rocks.splice(i, 1);
+        if (rocks[i].y > canvas.height) {
+          rocks.splice(i, 1);
+        }
       }
 
-      // Move lasers
+      // Update lasers
       for (let i = lasers.length - 1; i >= 0; i--) {
         lasers[i].y -= 5;
-        if (lasers[i].y < 0) lasers.splice(i, 1);
+        if (lasers[i].y < 0) {
+          lasers.splice(i, 1);
+        }
       }
 
-      // Collision detection
+      // Check collisions
       for (let l = lasers.length - 1; l >= 0; l--) {
         for (let r = rocks.length - 1; r >= 0; r--) {
           const dx = lasers[l].x - rocks[r].x;
@@ -90,8 +110,8 @@
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < rocks[r].radius) {
-            rocks.splice(r, 1);
             lasers.splice(l, 1);
+            rocks.splice(r, 1);
             score += 10;
             break;
           }
@@ -116,12 +136,12 @@
       });
     }
 
-    canvas.addEventListener("mousemove", e => {
+    canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
       ship.x = e.clientX - rect.left - ship.width / 2;
     });
 
-    // Start game after short delay to ensure image has time to load
+    // Start game after window fully loads
     window.onload = () => {
       setInterval(spawnRock, 1000);
       setInterval(shootLaser, 300);
