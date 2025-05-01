@@ -2,128 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Battle Ship</title>
+  <title>Alien Ship vs Rocks</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
-      font-family: Arial, sans-serif;
-      background-color: black;
-      color: white;
-      text-align: center;
-    }
-
-    #gameCanvas {
-      display: none;
       background-color: black;
     }
 
-    #loadingScreen, #startScreen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+    canvas {
+      display: block;
       background-color: black;
-      z-index: 10;
-    }
-
-    #startScreen h1 {
-      font-size: 64px;
-      margin-bottom: 40px;
-      color: lime;
-    }
-
-    #startButton {
-      padding: 20px 40px;
-      font-size: 32px;
-      background-color: yellow;
-      color: black;
-      border: none;
-      cursor: pointer;
-    }
-
-    #startButton:hover {
-      background-color: orange;
-    }
-
-    #scoreDisplay {
-      position: absolute;
-      top: 10px;
-      left: 20px;
-      font-size: 24px;
-      color: white;
-      z-index: 5;
-      display: none;
     }
   </style>
 </head>
 <body>
-
-  <div id="loadingScreen">Loading...</div>
-
-  <div id="startScreen" style="display: none;">
-    <h1>Battle Ship</h1>
-    <button id="startButton">START</button>
-  </div>
-
-  <div id="scoreDisplay">Score: 0</div>
-
-  <canvas id="gameCanvas" width="1920" height="919"></canvas>
+  <canvas id="game" width="1920" height="919"></canvas>
 
   <script>
-    const canvas = document.getElementById("gameCanvas");
+    const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
 
-    const loadingScreen = document.getElementById("loadingScreen");
-    const startScreen = document.getElementById("startScreen");
-    const startButton = document.getElementById("startButton");
-    const scoreDisplay = document.getElementById("scoreDisplay");
+    if (!ctx) {
+      console.error("Failed to get canvas rendering context");
+    }
 
     const bg = new Image();
     bg.src = "assets/background.jpg";
 
-    const shipImg = new Image();
-    shipImg.src = "assets/ship.png";
-
     let bgLoaded = false;
-    let shipLoaded = false;
-    let gameStarted = false;
-
-    let score = 0;
 
     bg.onload = () => {
       bgLoaded = true;
-      checkResourcesLoaded();
+      console.log("Background image loaded.");
     };
 
     bg.onerror = () => {
-      console.warn("Failed to load background image.");
-      bgLoaded = true;
-      checkResourcesLoaded();
+      console.warn("Background image failed to load. Using fallback color.");
     };
-
-    shipImg.onload = () => {
-      shipLoaded = true;
-      checkResourcesLoaded();
-    };
-
-    shipImg.onerror = () => {
-      console.warn("Failed to load ship image.");
-      shipLoaded = true;
-      checkResourcesLoaded();
-    };
-
-    function checkResourcesLoaded() {
-      if (bgLoaded && shipLoaded) {
-        loadingScreen.style.display = "none";
-        startScreen.style.display = "flex";
-      }
-    }
 
     const ship = {
       x: canvas.width / 2 - 25,
@@ -134,9 +50,11 @@
 
     const rocks = [];
     const lasers = [];
+    let score = 0;
 
     function drawShip() {
-      ctx.drawImage(shipImg, ship.x, ship.y, ship.width, ship.height);
+      ctx.fillStyle = "lime";
+      ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
     }
 
     function drawRocks() {
@@ -155,11 +73,8 @@
       }
     }
 
-    function drawScore() {
-      scoreDisplay.textContent = `Score: ${score}`;
-    }
-
     function updateGame() {
+      // Draw background
       if (bgLoaded) {
         ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
       } else {
@@ -170,23 +85,30 @@
       drawShip();
       drawRocks();
       drawLasers();
-      drawScore();
 
+      // Update rocks
       for (let i = rocks.length - 1; i >= 0; i--) {
         rocks[i].y += 2;
-        if (rocks[i].y > canvas.height) rocks.splice(i, 1);
+        if (rocks[i].y > canvas.height) {
+          rocks.splice(i, 1);
+        }
       }
 
+      // Update lasers
       for (let i = lasers.length - 1; i >= 0; i--) {
         lasers[i].y -= 5;
-        if (lasers[i].y < 0) lasers.splice(i, 1);
+        if (lasers[i].y < 0) {
+          lasers.splice(i, 1);
+        }
       }
 
+      // Check collisions
       for (let l = lasers.length - 1; l >= 0; l--) {
         for (let r = rocks.length - 1; r >= 0; r--) {
           const dx = lasers[l].x - rocks[r].x;
           const dy = lasers[l].y - rocks[r].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
+
           if (distance < rocks[r].radius) {
             lasers.splice(l, 1);
             rocks.splice(r, 1);
@@ -219,17 +141,12 @@
       ship.x = e.clientX - rect.left - ship.width / 2;
     });
 
-    startButton.addEventListener("click", () => {
-      startScreen.style.display = "none";
-      canvas.style.display = "block";
-      scoreDisplay.style.display = "block";
-      if (!gameStarted) {
-        setInterval(spawnRock, 1000);
-        setInterval(shootLaser, 300);
-        requestAnimationFrame(updateGame);
-        gameStarted = true;
-      }
-    });
+    // Start game after window fully loads
+    window.onload = () => {
+      setInterval(spawnRock, 1000);
+      setInterval(shootLaser, 300);
+      requestAnimationFrame(updateGame);
+    };
   </script>
 </body>
 </html>
