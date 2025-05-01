@@ -29,6 +29,7 @@
       justify-content: center;
       align-items: center;
       background-color: black;
+      z-index: 10;
     }
 
     #startScreen h1 {
@@ -49,5 +50,186 @@
     #startButton:hover {
       background-color: orange;
     }
+
+    #scoreDisplay {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 24px;
+      color: white;
+      z-index: 5;
+      display: none;
+    }
   </style>
-</head
+</head>
+<body>
+
+  <div id="loadingScreen">Loading...</div>
+
+  <div id="startScreen" style="display: none;">
+    <h1>Battle Ship</h1>
+    <button id="startButton">START</button>
+  </div>
+
+  <div id="scoreDisplay">Score: 0</div>
+
+  <canvas id="gameCanvas" width="1920" height="919"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const loadingScreen = document.getElementById("loadingScreen");
+    const startScreen = document.getElementById("startScreen");
+    const startButton = document.getElementById("startButton");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+
+    const bg = new Image();
+    bg.src = "assets/background.jpg";
+
+    const shipImg = new Image();
+    shipImg.src = "assets/ship.png";
+
+    let bgLoaded = false;
+    let shipLoaded = false;
+    let gameStarted = false;
+
+    let score = 0;
+
+    bg.onload = () => {
+      bgLoaded = true;
+      checkResourcesLoaded();
+    };
+
+    bg.onerror = () => {
+      console.warn("Failed to load background image.");
+      bgLoaded = true;
+      checkResourcesLoaded();
+    };
+
+    shipImg.onload = () => {
+      shipLoaded = true;
+      checkResourcesLoaded();
+    };
+
+    shipImg.onerror = () => {
+      console.warn("Failed to load ship image.");
+      shipLoaded = true;
+      checkResourcesLoaded();
+    };
+
+    function checkResourcesLoaded() {
+      if (bgLoaded && shipLoaded) {
+        loadingScreen.style.display = "none";
+        startScreen.style.display = "flex";
+      }
+    }
+
+    const ship = {
+      x: canvas.width / 2 - 25,
+      y: canvas.height - 100,
+      width: 50,
+      height: 50
+    };
+
+    const rocks = [];
+    const lasers = [];
+
+    function drawShip() {
+      ctx.drawImage(shipImg, ship.x, ship.y, ship.width, ship.height);
+    }
+
+    function drawRocks() {
+      ctx.fillStyle = "red";
+      for (let rock of rocks) {
+        ctx.beginPath();
+        ctx.arc(rock.x, rock.y, rock.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawLasers() {
+      ctx.fillStyle = "yellow";
+      for (let laser of lasers) {
+        ctx.fillRect(laser.x, laser.y, 5, 15);
+      }
+    }
+
+    function drawScore() {
+      scoreDisplay.textContent = `Score: ${score}`;
+    }
+
+    function updateGame() {
+      if (bgLoaded) {
+        ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      drawShip();
+      drawRocks();
+      drawLasers();
+      drawScore();
+
+      for (let i = rocks.length - 1; i >= 0; i--) {
+        rocks[i].y += 2;
+        if (rocks[i].y > canvas.height) rocks.splice(i, 1);
+      }
+
+      for (let i = lasers.length - 1; i >= 0; i--) {
+        lasers[i].y -= 5;
+        if (lasers[i].y < 0) lasers.splice(i, 1);
+      }
+
+      for (let l = lasers.length - 1; l >= 0; l--) {
+        for (let r = rocks.length - 1; r >= 0; r--) {
+          const dx = lasers[l].x - rocks[r].x;
+          const dy = lasers[l].y - rocks[r].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < rocks[r].radius) {
+            lasers.splice(l, 1);
+            rocks.splice(r, 1);
+            score += 10;
+            break;
+          }
+        }
+      }
+
+      requestAnimationFrame(updateGame);
+    }
+
+    function spawnRock() {
+      rocks.push({
+        x: Math.random() * canvas.width,
+        y: -20,
+        radius: 20 + Math.random() * 10
+      });
+    }
+
+    function shootLaser() {
+      lasers.push({
+        x: ship.x + ship.width / 2 - 2.5,
+        y: ship.y
+      });
+    }
+
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      ship.x = e.clientX - rect.left - ship.width / 2;
+    });
+
+    startButton.addEventListener("click", () => {
+      startScreen.style.display = "none";
+      canvas.style.display = "block";
+      scoreDisplay.style.display = "block";
+      if (!gameStarted) {
+        setInterval(spawnRock, 1000);
+        setInterval(shootLaser, 300);
+        requestAnimationFrame(updateGame);
+        gameStarted = true;
+      }
+    });
+  </script>
+</body>
+</html>
