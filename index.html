@@ -2,23 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Battle Ship</title>
+  <title>Alien Ship vs Rocks</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
+      background-color: black;
       font-family: Arial, sans-serif;
-      background-color: black;
-      color: white;
-      text-align: center;
     }
 
-    #gameCanvas {
-      display: none;
+    canvas {
+      display: none;  /* Hide the canvas until the game starts */
       background-color: black;
     }
 
-    #loadingScreen, #startScreen {
+    #startScreen {
       position: absolute;
       top: 0;
       left: 0;
@@ -30,12 +28,6 @@
       align-items: center;
       background-color: black;
       z-index: 10;
-    }
-
-    #startScreen h1 {
-      font-size: 64px;
-      margin-bottom: 40px;
-      color: lime;
     }
 
     #startButton {
@@ -63,71 +55,38 @@
   </style>
 </head>
 <body>
-
-  <div id="loadingScreen">Loading...</div>
-
-  <div id="startScreen" style="display: none;">
-    <h1>Battle Ship</h1>
+  <div id="startScreen">
+    <h1 style="font-size: 64px; color: lime;">Alien Ship vs Rocks</h1>
     <button id="startButton">START</button>
   </div>
 
   <div id="scoreDisplay">Score: 0</div>
 
-  <canvas id="gameCanvas" width="1920" height="919"></canvas>
+  <canvas id="game" width="1920" height="919"></canvas>
 
   <script>
-    const canvas = document.getElementById("gameCanvas");
+    const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
-
-    const loadingScreen = document.getElementById("loadingScreen");
     const startScreen = document.getElementById("startScreen");
     const startButton = document.getElementById("startButton");
     const scoreDisplay = document.getElementById("scoreDisplay");
 
     const bg = new Image();
-    bg.src = "assets/background.jpg";
-
-    const shipImg = new Image();
-    shipImg.src = "assets/ship.png";
+    bg.src = "assets/background.jpg";  // Ensure your path is correct
 
     let bgLoaded = false;
-    let shipLoaded = false;
+    let score = 0;
     let gameStarted = false;
 
-    let score = 0;
-
-    // Image load event handlers
+    // Check if the background image has loaded
     bg.onload = () => {
-      console.log("Background image loaded successfully.");
       bgLoaded = true;
-      checkResourcesLoaded();
+      console.log("Background image loaded.");
     };
 
     bg.onerror = () => {
-      console.warn("Background image failed to load. Using fallback color.");
-      bgLoaded = true; // Proceed anyway if image fails
-      checkResourcesLoaded();
+      console.warn("Background image failed to load.");
     };
-
-    shipImg.onload = () => {
-      console.log("Spaceship image loaded successfully.");
-      shipLoaded = true;
-      checkResourcesLoaded();
-    };
-
-    shipImg.onerror = () => {
-      console.warn("Spaceship image failed to load. Using fallback color.");
-      shipLoaded = true; // Proceed anyway if image fails
-      checkResourcesLoaded();
-    };
-
-    // Check if resources are loaded
-    function checkResourcesLoaded() {
-      if (bgLoaded && shipLoaded) {
-        loadingScreen.style.display = "none";
-        startScreen.style.display = "flex";
-      }
-    }
 
     const ship = {
       x: canvas.width / 2 - 25,
@@ -139,16 +98,11 @@
     const rocks = [];
     const lasers = [];
 
-    // Draw ship using spaceship image
     function drawShip() {
-      if (shipImg.complete) {
-        ctx.drawImage(shipImg, ship.x, ship.y, ship.width, ship.height);
-      } else {
-        console.error("Ship image not loaded.");
-      }
+      ctx.fillStyle = "lime";
+      ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
     }
 
-    // Draw rocks (simple circles)
     function drawRocks() {
       ctx.fillStyle = "red";
       for (let rock of rocks) {
@@ -158,7 +112,6 @@
       }
     }
 
-    // Draw lasers (yellow rectangles)
     function drawLasers() {
       ctx.fillStyle = "yellow";
       for (let laser of lasers) {
@@ -166,12 +119,10 @@
       }
     }
 
-    // Draw score
     function drawScore() {
       scoreDisplay.textContent = `Score: ${score}`;
     }
 
-    // Main game loop to update the canvas
     function updateGame() {
       if (bgLoaded) {
         ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
@@ -185,16 +136,23 @@
       drawLasers();
       drawScore();
 
+      // Update rocks
       for (let i = rocks.length - 1; i >= 0; i--) {
         rocks[i].y += 2;
-        if (rocks[i].y > canvas.height) rocks.splice(i, 1);
+        if (rocks[i].y > canvas.height) {
+          rocks.splice(i, 1);
+        }
       }
 
+      // Update lasers
       for (let i = lasers.length - 1; i >= 0; i--) {
         lasers[i].y -= 5;
-        if (lasers[i].y < 0) lasers.splice(i, 1);
+        if (lasers[i].y < 0) {
+          lasers.splice(i, 1);
+        }
       }
 
+      // Check collisions
       for (let l = lasers.length - 1; l >= 0; l--) {
         for (let r = rocks.length - 1; r >= 0; r--) {
           const dx = lasers[l].x - rocks[r].x;
@@ -213,7 +171,6 @@
       requestAnimationFrame(updateGame);
     }
 
-    // Function to spawn rocks
     function spawnRock() {
       rocks.push({
         x: Math.random() * canvas.width,
@@ -222,7 +179,6 @@
       });
     }
 
-    // Function to shoot laser
     function shootLaser() {
       lasers.push({
         x: ship.x + ship.width / 2 - 2.5,
@@ -230,31 +186,5 @@
       });
     }
 
-    // Mouse move listener for ship movement
     canvas.addEventListener("mousemove", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      ship.x = e.clientX - rect.left - ship.width / 2;
-    });
-
-    // Start button click event
-    startButton.addEventListener("click", () => {
-      startScreen.style.display = "none";
-      canvas.style.display = "block";
-      scoreDisplay.style.display = "block";
-      if (!gameStarted) {
-        setInterval(spawnRock, 1000);
-        setInterval(shootLaser, 300);
-        requestAnimationFrame(updateGame);
-        gameStarted = true;
-      }
-    });
-
-    // Start game after window fully loads
-    window.onload = () => {
-      setInterval(spawnRock, 1000);
-      setInterval(shootLaser, 300);
-      requestAnimationFrame(updateGame);
-    };
-  </script>
-</body>
-</html>
+      const rect
