@@ -85,12 +85,10 @@
     const scoreDisplay = document.getElementById("scoreDisplay");
 
     const bg = new Image();
-    // Replace with your absolute URL to the background image on GitHub
-    bg.src = "https://raw.githubusercontent.com/kingdarkchoco/alien-ship-game/main/assets/background.jpg";
+    bg.src = "assets/background.jpg";
 
     const shipImg = new Image();
-    // Replace with your absolute URL to the spaceship image on GitHub
-    shipImg.src = "https://raw.githubusercontent.com/kingdarkchoco/alien-ship-game/main/assets/ship.png";
+    shipImg.src = "assets/ship.png";
 
     let bgLoaded = false;
     let shipLoaded = false;
@@ -100,28 +98,30 @@
 
     // Image load event handlers
     bg.onload = () => {
+      console.log("Background image loaded successfully.");
       bgLoaded = true;
       checkResourcesLoaded();
     };
 
     bg.onerror = () => {
-      console.error("Failed to load background image.");
+      console.warn("Background image failed to load. Using fallback color.");
       bgLoaded = true; // Proceed anyway if image fails
       checkResourcesLoaded();
     };
 
     shipImg.onload = () => {
+      console.log("Spaceship image loaded successfully.");
       shipLoaded = true;
       checkResourcesLoaded();
     };
 
     shipImg.onerror = () => {
-      console.error("Failed to load spaceship image.");
+      console.warn("Spaceship image failed to load. Using fallback color.");
       shipLoaded = true; // Proceed anyway if image fails
       checkResourcesLoaded();
     };
 
-    // Function to check if all resources are loaded
+    // Check if resources are loaded
     function checkResourcesLoaded() {
       if (bgLoaded && shipLoaded) {
         loadingScreen.style.display = "none";
@@ -141,7 +141,11 @@
 
     // Draw ship using spaceship image
     function drawShip() {
-      ctx.drawImage(shipImg, ship.x, ship.y, ship.width, ship.height);
+      if (shipImg.complete) {
+        ctx.drawImage(shipImg, ship.x, ship.y, ship.width, ship.height);
+      } else {
+        console.error("Ship image not loaded.");
+      }
     }
 
     // Draw rocks (simple circles)
@@ -196,6 +200,7 @@
           const dx = lasers[l].x - rocks[r].x;
           const dy = lasers[l].y - rocks[r].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
+
           if (distance < rocks[r].radius) {
             lasers.splice(l, 1);
             rocks.splice(r, 1);
@@ -243,6 +248,13 @@
         gameStarted = true;
       }
     });
+
+    // Start game after window fully loads
+    window.onload = () => {
+      setInterval(spawnRock, 1000);
+      setInterval(shootLaser, 300);
+      requestAnimationFrame(updateGame);
+    };
   </script>
 </body>
 </html>
