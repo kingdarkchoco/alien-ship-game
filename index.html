@@ -168,10 +168,12 @@
   }
 
   class Rock {
-    constructor() {
+    constructor(isBig = false) {
+      this.isBig = isBig;  // Flag to check if it's a big rock
       this.x = Math.random() * canvas.width;
       this.y = -40;
-      this.radius = 16 + Math.random() * 8;  // Increased radius range for bigger rocks
+      this.radius = this.isBig ? 30 + Math.random() * 20 : 16 + Math.random() * 8;  // Bigger rocks have a larger radius
+      this.hitPoints = this.isBig ? 3 : 1;  // Big rocks need 3 hits to destroy, small rocks need 1
       this.speed = 1 + Math.random() * 1 + level * 0.3;
       this.color = this.getColorByLevel(level);
     }
@@ -190,6 +192,12 @@
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    hit() {
+      this.hitPoints--;
+      if (this.hitPoints <= 0) return true;  // Return true if the rock should be destroyed
+      return false;
     }
   }
 
@@ -236,7 +244,8 @@
     });
 
     if (Math.random() < 0.02 + level * 0.005) {
-      rocks.push(new Rock());
+      const isBigRock = Math.random() < 0.2;  // 20% chance for big rocks
+      rocks.push(new Rock(isBigRock));
     }
 
     rocks.forEach((r, ri) => {
@@ -248,10 +257,14 @@
         let dy = r.y - b.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < r.radius) {
-          score += 10;
-          updateScore();
-          rocks.splice(ri, 1);
-          bullets.splice(bi, 1);
+          if (r.hit()) {
+            score += r.isBig ? 30 : 10;  // Big rocks give more points
+            updateScore();
+            rocks.splice(ri, 1);
+            bullets.splice(bi, 1);
+          } else {
+            bullets.splice(bi, 1);  // Bullet only disappears if the rock is hit but not destroyed
+          }
         }
       });
 
