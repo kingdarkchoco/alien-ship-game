@@ -112,11 +112,7 @@ let mouseX = canvas.width / 2;
 let mouseY = canvas.height - 60;
 
 let shipImg = new Image();
-shipImg.src = 'assets/ship.png';
-
 let bgImg = new Image();
-bgImg.src = 'assets/background.jpg';
-
 let shootSound = new Audio('assets/shoot.wav');
 let explosionSound = new Audio('assets/explosion.wav');
 let gameOverSound = new Audio('assets/gameover.wav');
@@ -289,12 +285,24 @@ document.getElementById('shootBtn').addEventListener('touchend', () => autoShoot
 // Start and Restart buttons
 document.getElementById('startButton').onclick = () => {
   document.getElementById('startMenu').style.display = 'none';
-  initGame();
+  shipImg.src = 'assets/ship.png'; // Set the ship image source
+  bgImg.src = 'assets/background.jpg'; // Set the background image source
+  
+  shipImg.onload = bgImg.onload = () => {
+    initGame();
+  };
 };
+
 document.getElementById('restartButton').onclick = () => {
   document.getElementById('gameOverMenu').style.display = 'none';
-  initGame();
+  shipImg.src = 'assets/ship.png';
+  bgImg.src = 'assets/background.jpg';
+  
+  shipImg.onload = bgImg.onload = () => {
+    initGame();
+  };
 };
 </script>
+
 </body>
 </html>
