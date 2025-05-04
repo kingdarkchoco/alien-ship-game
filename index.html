@@ -94,12 +94,15 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
+  // Set the canvas to be smaller
+  const canvasWidth = 800;
+  const canvasHeight = 600;
+
   function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
   }
 
-  window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
   const startMenu = document.getElementById('startMenu');
@@ -112,7 +115,7 @@
 
   let mouseX = canvas.width / 2;
   let mouseY = canvas.height / 2;
-  let ship, bullets, rocks, score, shootInterval;
+  let ship, bullets, rocks, score, shootInterval, level, levelThresholds;
   let gameRunning = false;
   let highScore = 0;
 
@@ -168,7 +171,7 @@
       this.x = Math.random() * canvas.width;
       this.y = -50;
       this.radius = 30 + Math.random() * 20;
-      this.speed = 1 + Math.random() * 2;
+      this.speed = 1 + Math.random() * 2 + level * 0.5; // Increase speed with level
     }
 
     update() {
@@ -189,9 +192,11 @@
     bullets = [];
     rocks = [];
     score = 0;
+    level = 1;
     shootInterval = 0;
     scoreDisplay.textContent = "Score: 0";
     gameRunning = true;
+    levelThresholds = [100, 200, 300, 400, 500]; // Score thresholds for level-ups
     gameLoop();
   }
 
@@ -210,6 +215,15 @@
 
     ship.update();
     ship.draw();
+
+    // Check for level-up
+    levelThresholds.forEach((threshold, index) => {
+      if (score >= threshold && level === index + 1) {
+        level++;
+        // Adjust rock speed after level-up
+        levelThresholds[index] = null; // Remove the threshold for this level
+      }
+    });
 
     shootInterval++;
     if (shootInterval % 15 === 0) {
