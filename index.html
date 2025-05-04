@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Alien Ship vs Rocks</title>
   <style>
     * {
@@ -13,25 +13,26 @@
     html, body {
       width: 100%;
       height: 100%;
-      overflow: hidden;
       background: black;
+      color: white;
       font-family: Arial, sans-serif;
     }
 
     #container {
-      width: 80vw;
-      height: 80vh;
+      width: 70vw;
+      height: 70vh;
       margin: auto;
-      position: relative;
-      top: 10vh;
+      margin-top: 5vh;
       border: 3px solid white;
-      background-color: black;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     canvas {
       display: block;
-      width: 100%;
-      height: 100%;
+      background: black;
     }
 
     .overlay {
@@ -51,71 +52,62 @@
     #title {
       font-size: 3em;
       margin-bottom: 20px;
-      color: white;
     }
 
     button {
       padding: 10px 20px;
       font-size: 1.2em;
       cursor: pointer;
+      margin-top: 10px;
     }
 
     #scoreDisplay, #highScoreDisplay, #levelDisplay {
       position: absolute;
-      color: white;
+      top: 10px;
       font-size: 1.2em;
       z-index: 5;
-      font-weight: bold;
+      color: white;
     }
 
-    #scoreDisplay {
-      top: 10px;
-      left: 10px;
-    }
-
-    #highScoreDisplay {
-      top: 10px;
-      right: 10px;
-    }
-
-    #levelDisplay {
-      bottom: 10px;
-      left: 10px;
-    }
+    #scoreDisplay { left: 10px; }
+    #highScoreDisplay { right: 10px; }
+    #levelDisplay { left: 50%; transform: translateX(-50%); }
   </style>
 </head>
 <body>
 
 <div id="container">
+  <canvas id="game"></canvas>
+
+  <!-- Start Menu -->
   <div id="startMenu" class="overlay">
     <div id="title">Alien Ship vs Rocks</div>
     <button id="startButton">Start Game</button>
   </div>
 
+  <!-- Game Over Screen -->
   <div id="gameOverMenu" class="overlay" style="display: none;">
     <div id="title">Game Over</div>
-    <div id="finalScore" style="font-size: 1.5em; color: white; margin: 10px;"></div>
+    <div id="finalScore" style="font-size: 2em; margin: 10px 0;"></div>
     <button id="restartButton">Restart Game</button>
   </div>
 
   <div id="scoreDisplay">Score: 0</div>
   <div id="highScoreDisplay">High Score: 0</div>
   <div id="levelDisplay">Level: 1</div>
-  <canvas id="game"></canvas>
 </div>
 
 <script>
-  const container = document.getElementById('container');
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  const container = document.getElementById('container');
 
   function resizeCanvas() {
     canvas.width = container.clientWidth;
     canvas.height = container.clientHeight;
   }
-
-  window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
 
   const startMenu = document.getElementById('startMenu');
   const gameOverMenu = document.getElementById('gameOverMenu');
@@ -128,9 +120,9 @@
 
   let mouseX = canvas.width / 2;
   let mouseY = canvas.height / 2;
-
-  let ship, bullets, rocks, score, shootInterval, highScore = 0, level = 1;
+  let ship, bullets, rocks, score, level, shootInterval;
   let gameRunning = false;
+  let highScore = 0;
 
   class Ship {
     constructor() {
@@ -140,8 +132,8 @@
     }
 
     update() {
-      this.x = mouseX;
-      this.y = mouseY;
+      this.x = Math.max(Math.min(mouseX, canvas.width - this.size), this.size);
+      this.y = Math.max(Math.min(mouseY, canvas.height - this.size), this.size);
     }
 
     draw() {
@@ -159,7 +151,7 @@
     constructor(x, y) {
       this.x = x;
       this.y = y;
-      this.speed = 7;
+      this.speed = 6;
       this.size = 5;
     }
 
@@ -177,16 +169,14 @@
     constructor() {
       this.x = Math.random() * canvas.width;
       this.y = -40;
-      this.radius = 15 + Math.random() * 10;
+      this.radius = 12 + Math.random() * 8;
       this.speed = 1 + Math.random() * 1 + level * 0.3;
       this.color = this.getColorByLevel(level);
     }
 
     getColorByLevel(level) {
-      if (level < 3) return 'gray';
-      else if (level < 5) return 'darkorange';
-      else if (level < 7) return 'red';
-      else return 'purple';
+      const colors = ['gray', 'darkorange', 'red', 'purple', 'gold', 'blue', 'green', 'white'];
+      return colors[(level - 1) % colors.length];
     }
 
     update() {
@@ -206,12 +196,22 @@
     bullets = [];
     rocks = [];
     score = 0;
-    shootInterval = 0;
-    gameRunning = true;
     level = 1;
+    shootInterval = 0;
     scoreDisplay.textContent = "Score: 0";
     levelDisplay.textContent = "Level: 1";
+    gameRunning = true;
     gameLoop();
+  }
+
+  function updateScore() {
+    scoreDisplay.textContent = "Score: " + score;
+    const newLevel = Math.floor(score / 500) + 1;
+    if (newLevel !== level) {
+      level = newLevel;
+      levelDisplay.textContent = "Level: " + level;
+      for (let i = 0; i < 3; i++) rocks.push(new Rock());
+    }
   }
 
   function gameLoop() {
@@ -247,9 +247,9 @@
         let distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < r.radius) {
           score += 10;
-          bullets.splice(bi, 1);
-          rocks.splice(ri, 1);
           updateScore();
+          rocks.splice(ri, 1);
+          bullets.splice(bi, 1);
         }
       });
 
@@ -257,7 +257,7 @@
       let dy = r.y - ship.y;
       let distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < r.radius + ship.size) {
-        endGame();
+        gameOver();
       }
 
       if (r.y > canvas.height) {
@@ -268,23 +268,16 @@
     requestAnimationFrame(gameLoop);
   }
 
-  function updateScore() {
-    scoreDisplay.textContent = "Score: " + score;
-    level = Math.floor(score / 500) + 1;
-    levelDisplay.textContent = "Level: " + level;
-  }
-
-  function endGame() {
+  function gameOver() {
     gameRunning = false;
     if (score > highScore) {
       highScore = score;
       highScoreDisplay.textContent = "High Score: " + highScore;
     }
-    finalScore.textContent = "Final Score: " + score;
     gameOverMenu.style.display = 'flex';
+    finalScore.textContent = "Final Score: " + score;
   }
 
-  // Mouse control
   canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
     mouseX = e.clientX - rect.left;
@@ -293,6 +286,7 @@
 
   startButton.addEventListener('click', () => {
     startMenu.style.display = 'none';
+    gameOverMenu.style.display = 'none';
     initGame();
   });
 
