@@ -171,7 +171,7 @@
     constructor() {
       this.x = Math.random() * canvas.width;
       this.y = -40;
-      this.radius = 12 + Math.random() * 8;
+      this.radius = 16 + Math.random() * 8;  // Increased radius range for bigger rocks
       this.speed = 1 + Math.random() * 1 + level * 0.3;
       this.color = this.getColorByLevel(level);
     }
