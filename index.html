@@ -126,6 +126,13 @@
   let gameRunning = false;
   let highScore = 0;
 
+  // Update the mouse position
+  canvas.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = event.clientX - rect.left;
+    mouseY = event.clientY - rect.top;
+  });
+
   class Ship {
     constructor() {
       this.x = mouseX;
