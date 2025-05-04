@@ -126,13 +126,6 @@
   let gameRunning = false;
   let highScore = 0;
 
-  // Update the mouse position
-  canvas.addEventListener('mousemove', (event) => {
-    const rect = canvas.getBoundingClientRect();
-    mouseX = event.clientX - rect.left;
-    mouseY = event.clientY - rect.top;
-  });
-
   class Ship {
     constructor() {
       this.x = mouseX;
@@ -279,33 +272,59 @@
       bullets.forEach((b, bi) => {
         let dx = r.x - b.x;
         let dy = r.y - b.y;
-        if (dx * dx + dy * dy < r.radius * r.radius) {
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < r.radius) {
           if (r.hit()) {
             score += r.calculateScore();
-            rocks.splice(ri, 1);
             updateScore();
+            rocks.splice(ri, 1);
+            bullets.splice(bi, 1);
           }
-          bullets.splice(bi, 1);
         }
       });
+
+      let dx = r.x - ship.x;
+      let dy = r.y - ship.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < r.radius + ship.size) {
+        gameOver();
+      }
+
+      if (r.y > canvas.height) {
+        rocks.splice(ri, 1);
+      }
     });
 
-    rocks = rocks.filter(r => r.y < canvas.height);  // Remove rocks that go off-screen
     requestAnimationFrame(gameLoop);
   }
 
-  // Add event listener for the start button
+  function gameOver() {
+    gameRunning = false;
+    if (score > highScore) {
+      highScore = score;
+      highScoreDisplay.textContent = "High Score: " + highScore;
+    }
+    gameOverMenu.style.display = 'flex';
+    finalScore.textContent = "Final Score: " + score;
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+
   startButton.addEventListener('click', () => {
-    startMenu.style.display = 'none';  // Hide the start menu
-    initGame();  // Initialize the game
+    startMenu.style.display = 'none';
+    gameOverMenu.style.display = 'none';
+    initGame();
   });
 
-  // Add event listener for the restart button to restart the game
   restartButton.addEventListener('click', () => {
-    gameOverMenu.style.display = 'none';  // Hide the game over menu
-    initGame();  // Restart the game
+    gameOverMenu.style.display = 'none';
+    initGame();
   });
-
 </script>
+
 </body>
 </html>
