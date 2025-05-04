@@ -270,4 +270,35 @@
       r.draw();
 
       bullets.forEach((b, bi) => {
-        let dx = r.x
+        let dx = r.x - b.x;
+        let dy = r.y - b.y;
+        if (dx * dx + dy * dy < r.radius * r.radius) {
+          if (r.hit()) {
+            score += r.calculateScore();
+            rocks.splice(ri, 1);
+            updateScore();
+          }
+          bullets.splice(bi, 1);
+        }
+      });
+    });
+
+    rocks = rocks.filter(r => r.y < canvas.height);  // Remove rocks that go off-screen
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Add event listener for the start button
+  startButton.addEventListener('click', () => {
+    startMenu.style.display = 'none';  // Hide the start menu
+    initGame();  // Initialize the game
+  });
+
+  // Add event listener for the restart button to restart the game
+  restartButton.addEventListener('click', () => {
+    gameOverMenu.style.display = 'none';  // Hide the game over menu
+    initGame();  // Restart the game
+  });
+
+</script>
+</body>
+</html>
