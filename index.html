@@ -23,7 +23,7 @@
       display: block;
     }
 
-    #ui {
+    .overlay {
       position: absolute;
       top: 0;
       left: 0;
@@ -42,10 +42,11 @@
       margin-bottom: 30px;
     }
 
-    #startButton {
+    button {
       padding: 15px 30px;
       font-size: 1.5em;
       cursor: pointer;
+      margin-top: 20px;
     }
 
     #scoreDisplay {
@@ -59,9 +60,17 @@
 </head>
 <body>
 
-<div id="ui">
+<!-- Start Menu -->
+<div id="startMenu" class="overlay">
   <div id="title">Alien Ship vs Rocks</div>
   <button id="startButton">Start Game</button>
+</div>
+
+<!-- Game Over Screen -->
+<div id="gameOverMenu" class="overlay" style="display: none;">
+  <div id="title">Game Over</div>
+  <div id="finalScore" style="font-size: 2em; margin: 10px 0;"></div>
+  <button id="restartButton">Restart Game</button>
 </div>
 
 <div id="scoreDisplay">Score: 0</div>
@@ -73,9 +82,12 @@
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  const ui = document.getElementById('ui');
+  const startMenu = document.getElementById('startMenu');
+  const gameOverMenu = document.getElementById('gameOverMenu');
   const startButton = document.getElementById('startButton');
+  const restartButton = document.getElementById('restartButton');
   const scoreDisplay = document.getElementById('scoreDisplay');
+  const finalScore = document.getElementById('finalScore');
 
   let mouseX = canvas.width / 2;
   let mouseY = canvas.height / 2;
@@ -195,6 +207,7 @@
       r.update();
       r.draw();
 
+      // Bullet vs rock
       bullets.forEach((b, bi) => {
         let dx = r.x - b.x;
         let dy = r.y - b.y;
@@ -207,6 +220,14 @@
         }
       });
 
+      // Ship vs rock
+      let dx = r.x - ship.x;
+      let dy = r.y - ship.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < r.radius + ship.size) {
+        gameOver();
+      }
+
       if (r.y > canvas.height) {
         rocks.splice(ri, 1);
       }
@@ -215,13 +236,25 @@
     requestAnimationFrame(gameLoop);
   }
 
+  function gameOver() {
+    gameRunning = false;
+    gameOverMenu.style.display = 'flex';
+    finalScore.textContent = "Final Score: " + score;
+  }
+
   canvas.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
   });
 
   startButton.addEventListener('click', () => {
-    ui.style.display = 'none';
+    startMenu.style.display = 'none';
+    gameOverMenu.style.display = 'none';
+    initGame();
+  });
+
+  restartButton.addEventListener('click', () => {
+    gameOverMenu.style.display = 'none';
     initGame();
   });
 </script>
