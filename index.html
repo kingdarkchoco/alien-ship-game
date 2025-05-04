@@ -54,14 +54,6 @@
       cursor: pointer;
       margin-top: 20px;
     }
-
-    #scoreDisplay {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      font-size: 1.5em;
-      z-index: 5;
-    }
   </style>
 </head>
 <body>
@@ -79,7 +71,6 @@
   <button id="restartButton">Restart Game</button>
 </div>
 
-<div id="scoreDisplay">Score: 0</div>
 <canvas id="game"></canvas>
 
 <script>
@@ -110,13 +101,14 @@
   const gameOverMenu = document.getElementById('gameOverMenu');
   const startButton = document.getElementById('startButton');
   const restartButton = document.getElementById('restartButton');
-  const scoreDisplay = document.getElementById('scoreDisplay');
-  const finalScore = document.getElementById('finalScore');
 
   let mouseX = canvas.width / 2;
   let mouseY = canvas.height / 2;
-  let ship, bullets, rocks, score, shootInterval;
+  let ship, bullets, rocks, score, shootInterval, highScore;
   let gameRunning = false;
+
+  // Initialize the high score
+  highScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0;
 
   const background = new Image();
   background.src = 'assets/background.jpg';
@@ -238,6 +230,11 @@
         if (distance < r.radius) {
           const points = r.radius <= 20 ? 10 : 20;
           score += points;
+          // Update the high score if the current score is higher
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('highScore', highScore); // Save high score in localStorage
+          }
           scoreDisplay.textContent = "Score: " + score;
           rocks.splice(ri, 1);
           bullets.splice(bi, 1);
@@ -257,6 +254,14 @@
       }
     });
 
+    // Display score on top-left
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText("Score: " + score, 10, 30);
+
+    // Display high score on top-right
+    ctx.fillText("High Score: " + highScore, canvas.width - 150, 30);
+
     requestAnimationFrame(gameLoop);
   }
 
@@ -275,33 +280,17 @@
   // Touch Events for Mobile Control
   let touchX = canvas.width / 2;
   let touchY = canvas.height / 2;
-  let touchingShip = false;
 
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     touchX = e.touches[0].clientX;
     touchY = e.touches[0].clientY;
-
-    // Check if the touch started on the ship
-    let dx = touchX - ship.x;
-    let dy = touchY - ship.y;
-    let distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance < ship.size) {
-      touchingShip = true;
-    }
   });
 
   canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    if (touchingShip) {
-      touchX = e.touches[0].clientX;
-      touchY = e.touches[0].clientY;
-    }
-  });
-
-  canvas.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    touchingShip = false; // Stop moving the ship when touch ends
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
   });
 
   // Update mouseX and mouseY to touchX and touchY on mobile
@@ -310,19 +299,18 @@
     mouseY = touchY - canvas.offsetTop;
   }
 
-  // Start Button Click Event
   startButton.addEventListener('click', () => {
     startMenu.style.display = 'none';
     gameOverMenu.style.display = 'none';
-    initGame(); // Initialize the game
+    initGame();
   });
 
-  // Restart Button Click Event
   restartButton.addEventListener('click', () => {
     gameOverMenu.style.display = 'none';
-    initGame(); // Restart the game
+    initGame();
   });
 
+  // Main game loop with touch control
   function gameLoopWithTouch() {
     updateShipPosition();
     gameLoop();
@@ -334,7 +322,6 @@
     initGame();
     gameLoopWithTouch();
   });
-
 </script>
 
 </body>
