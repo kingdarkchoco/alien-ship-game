@@ -18,14 +18,15 @@
       font-family: Arial, sans-serif;
       color: black;
       position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     #game {
       background-color: black;
       display: block;
-      position: absolute;
-      top: 0;
-      left: 0;
+      position: relative;
     }
 
     .overlay {
@@ -94,7 +95,7 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
-  // Set the canvas to be smaller
+  // Set the canvas to be smaller and center it
   const canvasWidth = 800;
   const canvasHeight = 600;
 
@@ -179,7 +180,18 @@
     }
 
     draw() {
-      const rockColor = this.radius <= 40 ? 'gray' : 'darkgray';
+      // Change color of rocks based on the level
+      let rockColor = 'gray';
+      if (level === 2) {
+        rockColor = 'red';
+      } else if (level === 3) {
+        rockColor = 'blue';
+      } else if (level === 4) {
+        rockColor = 'yellow';
+      } else if (level >= 5) {
+        rockColor = 'green';
+      }
+      
       ctx.fillStyle = rockColor;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
