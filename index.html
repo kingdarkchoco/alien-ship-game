@@ -4,90 +4,85 @@
   <meta charset="UTF-8">
   <title>Alien Ship vs Rocks</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: black;
+      background: white;
       font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      color: black;
+      position: relative;
     }
-    #game { position: absolute; background: black; touch-action: none; }
+
+    #game {
+      background-color: black;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
 
     .overlay {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.85);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 10;
-      color: white;
+    }
+
+    #title {
+      font-size: 4em;
+      margin-bottom: 30px;
     }
 
     button {
       padding: 15px 30px;
       font-size: 1.5em;
-      margin: 20px;
       cursor: pointer;
+      margin-top: 20px;
     }
 
     #scoreDisplay, #highScoreDisplay {
       position: absolute;
-      font-size: 1.2em;
-      color: white;
+      top: 20px;
+      font-size: 1.5em;
       z-index: 5;
-      padding: 10px;
-    }
-
-    #scoreDisplay { top: 10px; left: 10px; }
-    #highScoreDisplay { top: 10px; right: 10px; }
-
-    /* Touch Controls */
-    .controls {
-      position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5;
-      display: flex;
-      gap: 20px;
-    }
-
-    .btn {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      border: 2px solid white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 24px;
       color: white;
-      user-select: none;
     }
 
-    .btn:active {
-      background: rgba(255,255,255,0.4);
+    #scoreDisplay {
+      left: 20px;
+    }
+
+    #highScoreDisplay {
+      right: 20px;
     }
   </style>
 </head>
 <body>
 
+<!-- Start Menu -->
 <div id="startMenu" class="overlay">
-  <h1>Alien Ship vs Rocks</h1>
+  <div id="title">Alien Ship vs Rocks</div>
   <button id="startButton">Start Game</button>
 </div>
 
+<!-- Game Over Screen -->
 <div id="gameOverMenu" class="overlay" style="display: none;">
-  <h1>Game Over</h1>
-  <div id="finalScore" style="font-size: 2em;"></div>
+  <div id="title">Game Over</div>
+  <div id="finalScore" style="font-size: 2em; margin: 10px 0;"></div>
   <button id="restartButton">Restart Game</button>
 </div>
 
@@ -95,213 +90,221 @@
 <div id="highScoreDisplay">High Score: 0</div>
 <canvas id="game"></canvas>
 
-<!-- Touch Controls -->
-<div class="controls">
-  <div id="leftBtn" class="btn">⯇</div>
-  <div id="shootBtn" class="btn">⭘</div>
-  <div id="rightBtn" class="btn">⯈</div>
-</div>
-
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-canvas.width = 375;
-canvas.height = 667;
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
 
-let mouseX = canvas.width / 2;
-let mouseY = canvas.height - 60;
-
-let shipImg = new Image();
-let bgImg = new Image();
-let shootSound = new Audio('assets/shoot.wav');
-let explosionSound = new Audio('assets/explosion.wav');
-let gameOverSound = new Audio('assets/gameover.wav');
-
-let ship, bullets, rocks, score, shootInterval, levelSpeed;
-let gameRunning = false;
-let highScore = 0;
-
-class Ship {
-  constructor() {
-    this.x = canvas.width / 2;
-    this.y = canvas.height - 60;
-    this.size = 30;
-    this.speed = 5;
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
   }
 
-  move(dir) {
-    this.x += dir * this.speed;
-    this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const startMenu = document.getElementById('startMenu');
+  const gameOverMenu = document.getElementById('gameOverMenu');
+  const startButton = document.getElementById('startButton');
+  const restartButton = document.getElementById('restartButton');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const finalScore = document.getElementById('finalScore');
+  const highScoreDisplay = document.getElementById('highScoreDisplay');
+
+  let mouseX = canvas.width / 2;
+  let mouseY = canvas.height / 2;
+  let touchX = mouseX;
+  let touchY = mouseY;
+  let ship, bullets, rocks, score, shootInterval;
+  let gameRunning = false;
+  let highScore = 0;
+
+  const background = new Image();
+  background.src = 'assets/background.jpg';
+  let bgLoaded = false;
+  background.onload = () => { bgLoaded = true; };
+  background.onerror = () => { console.warn("Background image failed to load."); };
+
+  class Ship {
+    constructor() {
+      this.x = mouseX;
+      this.y = mouseY;
+      this.size = 30;
+    }
+
+    update() {
+      this.x = Math.max(Math.min(mouseX, canvas.width - this.size), this.size);
+      this.y = Math.max(Math.min(mouseY, canvas.height - this.size), this.size);
+    }
+
+    draw() {
+      ctx.fillStyle = 'lime';
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y - this.size);
+      ctx.lineTo(this.x - this.size, this.y + this.size);
+      ctx.lineTo(this.x + this.size, this.y + this.size);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
 
-  update() {
-    // ship follows mouseX for desktop
-    this.x = mouseX;
+  class Bullet {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.speed = 7;
+      this.size = 5;
+    }
+
+    update() {
+      this.y -= this.speed;
+    }
+
+    draw() {
+      ctx.fillStyle = 'cyan';
+      ctx.fillRect(this.x - this.size / 2, this.y, this.size, 10);
+    }
   }
 
-  draw() {
-    ctx.drawImage(shipImg, this.x - 25, this.y - 25, 50, 50);
-  }
-}
+  class Rock {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = -50;
+      this.radius = 30 + Math.random() * 20;
+      this.speed = 1 + Math.random() * 2;
+    }
 
-class Bullet {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.size = 5;
-    this.speed = 7;
-  }
+    update() {
+      this.y += this.speed;
+    }
 
-  update() { this.y -= this.speed; }
-  draw() {
-    ctx.fillStyle = 'cyan';
-    ctx.fillRect(this.x - 2, this.y, 4, 10);
-  }
-}
-
-class Rock {
-  constructor(speedMultiplier) {
-    this.x = Math.random() * canvas.width;
-    this.y = -30;
-    this.radius = 20 + Math.random() * 20;
-    this.speed = (1 + Math.random() * 2) * speedMultiplier;
+    draw() {
+      const rockColor = this.radius <= 40 ? 'gray' : 'darkgray';
+      ctx.fillStyle = rockColor;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  update() { this.y += this.speed; }
-
-  draw() {
-    ctx.fillStyle = this.radius > 35 ? 'darkgray' : 'gray';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function initGame() {
-  ship = new Ship();
-  bullets = [];
-  rocks = [];
-  score = 0;
-  shootInterval = 0;
-  levelSpeed = 1;
-  document.getElementById('scoreDisplay').textContent = "Score: 0";
-  gameRunning = true;
-  gameLoop();
-}
-
-function gameLoop() {
-  if (!gameRunning) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Background
-  if (bgImg.complete) ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-
-  ship.update();
-  ship.draw();
-
-  shootInterval++;
-  if (shootInterval % 15 === 0 && autoShoot) {
-    bullets.push(new Bullet(ship.x, ship.y - 20));
-    shootSound.play();
+  function initGame() {
+    ship = new Ship();
+    bullets = [];
+    rocks = [];
+    score = 0;
+    shootInterval = 0;
+    scoreDisplay.textContent = "Score: 0";
+    gameRunning = true;
+    gameLoop();
   }
 
-  bullets.forEach((b, i) => {
-    b.update();
-    b.draw();
-    if (b.y < 0) bullets.splice(i, 1);
-  });
+  function gameLoop() {
+    if (!gameRunning) return;
 
-  if (Math.random() < 0.02 * levelSpeed) {
-    rocks.push(new Rock(levelSpeed));
-  }
+    // Always update mouse position to touch position for mobile
+    mouseX = touchX;
+    mouseY = touchY;
 
-  rocks.forEach((r, ri) => {
-    r.update();
-    r.draw();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Bullet collision
-    bullets.forEach((b, bi) => {
-      let dx = r.x - b.x;
-      let dy = r.y - b.y;
+    // Optional: Draw background image
+    if (bgLoaded) {
+      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    ship.update();
+    ship.draw();
+
+    shootInterval++;
+    if (shootInterval % 15 === 0) {
+      bullets.push(new Bullet(ship.x, ship.y - 20));
+    }
+
+    bullets.forEach((b, i) => {
+      b.update();
+      b.draw();
+      if (b.y < 0) bullets.splice(i, 1);
+    });
+
+    if (Math.random() < 0.02) {
+      rocks.push(new Rock());
+    }
+
+    rocks.forEach((r, ri) => {
+      r.update();
+      r.draw();
+
+      bullets.forEach((b, bi) => {
+        let dx = r.x - b.x;
+        let dy = r.y - b.y;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < r.radius) {
+          const points = r.radius <= 40 ? 10 : 20;
+          score += points;
+          scoreDisplay.textContent = "Score: " + score;
+          rocks.splice(ri, 1);
+          bullets.splice(bi, 1);
+        }
+      });
+
+      let dx = r.x - ship.x;
+      let dy = r.y - ship.y;
       let distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < r.radius) {
-        score += r.radius > 30 ? 20 : 10;
+      if (distance < r.radius + ship.size) {
+        gameOver();
+      }
+
+      if (r.y > canvas.height) {
         rocks.splice(ri, 1);
-        bullets.splice(bi, 1);
-        explosionSound.play();
       }
     });
 
-    // Ship collision
-    let dx = r.x - ship.x;
-    let dy = r.y - ship.y;
-    if (Math.sqrt(dx * dx + dy * dy) < r.radius + ship.size) {
-      gameOver();
-    }
+    requestAnimationFrame(gameLoop);
+  }
 
-    if (r.y > canvas.height) rocks.splice(ri, 1);
+  function gameOver() {
+    gameRunning = false;
+    if (score > highScore) {
+      highScore = score;
+      highScoreDisplay.textContent = "High Score: " + highScore;
+    }
+    gameOverMenu.style.display = 'flex';
+    finalScore.textContent = "Final Score: " + score;
+  }
+
+  // Mouse Event for Desktop Control
+  canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
   });
 
-  // Level up every 300 points
-  levelSpeed = 1 + Math.floor(score / 300) * 0.2;
+  // Touch Events for Mobile Control
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchX = touch.clientX;
+    touchY = touch.clientY;
+  }, { passive: false });
 
-  document.getElementById('scoreDisplay').textContent = "Score: " + score;
-  requestAnimationFrame(gameLoop);
-}
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchX = touch.clientX;
+    touchY = touch.clientY;
+  }, { passive: false });
 
-function gameOver() {
-  gameRunning = false;
-  gameOverSound.play();
-  if (score > highScore) {
-    highScore = score;
-    document.getElementById('highScoreDisplay').textContent = "High Score: " + highScore;
-  }
-  document.getElementById('gameOverMenu').style.display = 'flex';
-  document.getElementById('finalScore').textContent = "Final Score: " + score;
-}
-
-// Mouse movement (desktop)
-canvas.addEventListener('mousemove', e => {
-  mouseX = e.clientX - canvas.offsetLeft;
-});
-
-// Touch movement
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  mouseX = e.touches[0].clientX - canvas.offsetLeft;
-});
-
-// Touch controls
-let autoShoot = false;
-document.getElementById('leftBtn').addEventListener('touchstart', () => moveInterval = setInterval(() => ship.move(-1), 20));
-document.getElementById('rightBtn').addEventListener('touchstart', () => moveInterval = setInterval(() => ship.move(1), 20));
-document.getElementById('shootBtn').addEventListener('touchstart', () => autoShoot = true);
-
-['leftBtn', 'rightBtn'].forEach(id => {
-  document.getElementById(id).addEventListener('touchend', () => clearInterval(moveInterval));
-});
-document.getElementById('shootBtn').addEventListener('touchend', () => autoShoot = false);
-
-// Start and Restart buttons
-document.getElementById('startButton').onclick = () => {
-  document.getElementById('startMenu').style.display = 'none';
-  shipImg.src = 'assets/ship.png'; // Set the ship image source
-  bgImg.src = 'assets/background.jpg'; // Set the background image source
-  
-  shipImg.onload = bgImg.onload = () => {
+  startButton.addEventListener('click', () => {
+    startMenu.style.display = 'none';
+    gameOverMenu.style.display = 'none';
     initGame();
-  };
-};
+  });
 
-document.getElementById('restartButton').onclick = () => {
-  document.getElementById('gameOverMenu').style.display = 'none';
-  shipImg.src = 'assets/ship.png';
-  bgImg.src = 'assets/background.jpg';
-  
-  shipImg.onload = bgImg.onload = () => {
+  restartButton.addEventListener('click', () => {
+    gameOverMenu.style.display = 'none';
     initGame();
-  };
-};
+  });
 </script>
 
 </body>
