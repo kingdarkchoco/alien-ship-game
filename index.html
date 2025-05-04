@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Alien Ship vs Rocks</title>
   <style>
     * {
@@ -85,13 +86,25 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
-  // Set canvas size to be similar to a mobile phone screen (375x667 for mobile size)
+  // Default phone screen size (for PC)
   const phoneWidth = 375;
   const phoneHeight = 667;
 
   // For desktop: fixed size canvas (phone size) and center it
-  canvas.width = phoneWidth;
-  canvas.height = phoneHeight;
+  function adjustCanvasSize() {
+    if (window.innerWidth <= 768) { // Mobile screens
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    } else { // Desktop screens
+      canvas.width = phoneWidth;
+      canvas.height = phoneHeight;
+      canvas.style.margin = "auto";
+    }
+  }
+
+  // Adjust canvas size on load and window resize
+  window.addEventListener('load', adjustCanvasSize);
+  window.addEventListener('resize', adjustCanvasSize);
 
   const startMenu = document.getElementById('startMenu');
   const gameOverMenu = document.getElementById('gameOverMenu');
@@ -116,7 +129,7 @@
     constructor() {
       this.x = mouseX;
       this.y = mouseY;
-      this.size = 30;
+      this.size = 20; // Smaller ship size
     }
 
     update() {
@@ -140,8 +153,8 @@
     constructor(x, y) {
       this.x = x;
       this.y = y;
-      this.speed = 7;
-      this.size = 5;
+      this.speed = 5;
+      this.size = 3; // Smaller bullet size
     }
 
     update() {
@@ -150,7 +163,7 @@
 
     draw() {
       ctx.fillStyle = 'cyan';
-      ctx.fillRect(this.x - this.size / 2, this.y, this.size, 10);
+      ctx.fillRect(this.x - this.size / 2, this.y, this.size, 8);
     }
   }
 
@@ -158,7 +171,7 @@
     constructor() {
       this.x = Math.random() * canvas.width;
       this.y = -50;
-      this.radius = 30 + Math.random() * 20;
+      this.radius = 15 + Math.random() * 10; // Smaller rocks
       this.speed = 1 + Math.random() * 2;
     }
 
@@ -167,7 +180,7 @@
     }
 
     draw() {
-      const rockColor = this.radius <= 40 ? 'gray' : 'darkgray';
+      const rockColor = this.radius <= 20 ? 'gray' : 'darkgray';
       ctx.fillStyle = rockColor;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -223,7 +236,7 @@
         let dy = r.y - b.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < r.radius) {
-          const points = r.radius <= 40 ? 10 : 20;
+          const points = r.radius <= 20 ? 10 : 20;
           score += points;
           scoreDisplay.textContent = "Score: " + score;
           rocks.splice(ri, 1);
@@ -262,23 +275,33 @@
   // Touch Events for Mobile Control
   let touchX = canvas.width / 2;
   let touchY = canvas.height / 2;
+  let touchingShip = false;
 
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     touchX = e.touches[0].clientX;
     touchY = e.touches[0].clientY;
+
+    // Check if the touch started on the ship
+    let dx = touchX - ship.x;
+    let dy = touchY - ship.y;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < ship.size) {
+      touchingShip = true;
+    }
   });
 
   canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    touchX = e.touches[0].clientX;
-    touchY = e.touches[0].clientY;
+    if (touchingShip) {
+      touchX = e.touches[0].clientX;
+      touchY = e.touches[0].clientY;
+    }
   });
 
   canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
-    touchX = canvas.width / 2;
-    touchY = canvas.height / 2;
+    touchingShip = false; // Stop moving the ship when touch ends
   });
 
   // Update mouseX and mouseY to touchX and touchY on mobile
@@ -299,6 +322,19 @@
     gameOverMenu.style.display = 'none';
     initGame(); // Restart the game
   });
+
+  function gameLoopWithTouch() {
+    updateShipPosition();
+    gameLoop();
+  }
+
+  startButton.addEventListener('click', () => {
+    startMenu.style.display = 'none';
+    gameOverMenu.style.display = 'none';
+    initGame();
+    gameLoopWithTouch();
+  });
+
 </script>
 
 </body>
