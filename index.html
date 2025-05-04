@@ -134,8 +134,8 @@
     }
 
     update() {
-      this.x = Math.max(Math.min(mouseX, canvas.width - this.size), this.size);
-      this.y = Math.max(Math.min(mouseY, canvas.height - this.size), this.size);
+      this.x = mouseX;
+      this.y = mouseY;
     }
 
     draw() {
@@ -296,8 +296,8 @@
 
   // Mouse Event for Desktop Control
   canvas.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+    mouseX = e.clientX - canvas.offsetLeft;
+    mouseY = e.clientY - canvas.offsetTop;
   });
 
   startButton.addEventListener('click', () => {
