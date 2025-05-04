@@ -112,8 +112,6 @@
 
   let mouseX = canvas.width / 2;
   let mouseY = canvas.height / 2;
-  let touchX = mouseX;
-  let touchY = mouseY;
   let ship, bullets, rocks, score, shootInterval;
   let gameRunning = false;
   let highScore = 0;
@@ -200,10 +198,6 @@
   function gameLoop() {
     if (!gameRunning) return;
 
-    // Always update mouse position to touch position for mobile
-    mouseX = touchX;
-    mouseY = touchY;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Optional: Draw background image
@@ -279,21 +273,6 @@
     mouseX = e.clientX;
     mouseY = e.clientY;
   });
-
-  // Touch Events for Mobile Control
-  canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    touchX = touch.clientX;
-    touchY = touch.clientY;
-  }, { passive: false });
-
-  canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    touchX = touch.clientX;
-    touchY = touch.clientY;
-  }, { passive: false });
 
   startButton.addEventListener('click', () => {
     startMenu.style.display = 'none';
