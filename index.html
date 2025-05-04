@@ -1,32 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Alien Ship vs Rocks</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
       background-color: black;
+      font-family: Arial, sans-serif;
       color: white;
-      font-family: sans-serif;
     }
 
     #ui {
       position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
+      background: rgba(0, 0, 0, 0.8);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 2;
-      text-align: center;
-      background-color: rgba(0, 0, 0, 0.7);
     }
 
-    h1 {
-      font-size: 4em;
+    #title {
+      font-size: 3em;
       margin-bottom: 20px;
     }
 
@@ -44,178 +45,183 @@
       z-index: 3;
     }
 
-    #gameOverText {
-      position: absolute;
-      top: 40%;
-      width: 100%;
-      text-align: center;
-      font-size: 3em;
-      color: red;
-      display: none;
-      z-index: 3;
-    }
-
     canvas {
       display: block;
-      background-color: black;
     }
   </style>
 </head>
 <body>
-  <div id="ui">
-    <h1>Alien Ship vs Rocks</h1>
-    <button id="startButton">Start Game</button>
-  </div>
 
-  <div id="scoreDisplay">Score: 0</div>
-  <div id="gameOverText">Game Over</div>
-  <canvas id="game" width="1920" height="919"></canvas>
+<div id="ui">
+  <div id="title">Alien Ship vs Rocks</div>
+  <button id="startButton">Start Game</button>
+</div>
 
-  <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    const startButton = document.getElementById("startButton");
-    const scoreDisplay = document.getElementById("scoreDisplay");
-    const gameOverText = document.getElementById("gameOverText");
-    const ui = document.getElementById("ui");
+<div id="scoreDisplay">Score: 0</div>
+<canvas id="game"></canvas>
 
-    const bg = new Image();
-    bg.src = "assets/background.jpg";
+<script>
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
-    let bgLoaded = false;
-    let gameRunning = false;
-    let gameInterval, laserInterval;
-    let ship, rocks, lasers, score;
+  const ui = document.getElementById('ui');
+  const startButton = document.getElementById('startButton');
+  const scoreDisplay = document.getElementById('scoreDisplay');
 
-    bg.onload = () => {
-      bgLoaded = true;
-    };
+  let mouseX = canvas.width / 2;
+  let mouseY = canvas.height / 2;
 
-    function initGame() {
-      ship = {
-        x: canvas.width / 2 - 25,
-        y: canvas.height - 100,
-        width: 50,
-        height: 50
-      };
-      rocks = [];
-      lasers = [];
-      score = 0;
-      scoreDisplay.textContent = "Score: 0";
+  let ship, bullets, rocks, score, shootInterval, gameRunning = false;
+  let background = new Image();
+  let bgLoaded = false;
+
+  background.src = 'assets/background.jpg';
+
+  background.onload = () => {
+    bgLoaded = true;
+  };
+
+  background.onerror = () => {
+    console.warn("Background failed to load. Using fallback.");
+  };
+
+  class Ship {
+    constructor() {
+      this.x = mouseX;
+      this.y = mouseY;
+      this.size = 30;
     }
 
-    function drawShip() {
-      ctx.fillStyle = "lime";
-      ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
+    update() {
+      this.x = mouseX;
+      this.y = mouseY;
     }
 
-    function drawRocks() {
-      ctx.fillStyle = "red";
-      for (let rock of rocks) {
-        ctx.beginPath();
-        ctx.arc(rock.x, rock.y, rock.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
+    draw() {
+      ctx.fillStyle = 'lime';
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y - this.size);
+      ctx.lineTo(this.x - this.size, this.y + this.size);
+      ctx.lineTo(this.x + this.size, this.y + this.size);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  class Bullet {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.speed = 7;
+      this.size = 5;
     }
 
-    function drawLasers() {
-      ctx.fillStyle = "yellow";
-      for (let laser of lasers) {
-        ctx.fillRect(laser.x, laser.y, 5, 15);
-      }
+    update() {
+      this.y -= this.speed;
     }
 
-    function updateGame() {
-      if (!gameRunning) return;
+    draw() {
+      ctx.fillStyle = 'cyan';
+      ctx.fillRect(this.x - this.size/2, this.y, this.size, 10);
+    }
+  }
 
-      // Draw background
-      if (bgLoaded) {
-        ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-      } else {
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-
-      drawShip();
-      drawRocks();
-      drawLasers();
-
-      // Update rocks
-      for (let i = rocks.length - 1; i >= 0; i--) {
-        rocks[i].y += 2;
-        if (rocks[i].y > canvas.height) {
-          rocks.splice(i, 1);
-        } else if (
-          rocks[i].x > ship.x &&
-          rocks[i].x < ship.x + ship.width &&
-          rocks[i].y + rocks[i].radius > ship.y
-        ) {
-          endGame();
-          return;
-        }
-      }
-
-      // Update lasers
-      for (let i = lasers.length - 1; i >= 0; i--) {
-        lasers[i].y -= 5;
-        if (lasers[i].y < 0) {
-          lasers.splice(i, 1);
-        }
-      }
-
-      // Collision detection
-      for (let l = lasers.length - 1; l >= 0; l--) {
-        for (let r = rocks.length - 1; r >= 0; r--) {
-          const dx = lasers[l].x - rocks[r].x;
-          const dy = lasers[l].y - rocks[r].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < rocks[r].radius) {
-            lasers.splice(l, 1);
-            rocks.splice(r, 1);
-            score += 10;
-            scoreDisplay.textContent = "Score: " + score;
-            break;
-          }
-        }
-      }
-
-      requestAnimationFrame(updateGame);
+  class Rock {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = -50;
+      this.radius = 30 + Math.random() * 20;
+      this.speed = 1 + Math.random() * 2;
     }
 
-    function spawnRock() {
-      rocks.push({
-        x: Math.random() * canvas.width,
-        y: -20,
-        radius: 20 + Math.random() * 10
-      });
+    update() {
+      this.y += this.speed;
     }
 
-    function shootLaser() {
-      lasers.push({
-        x: ship.x + ship.width / 2 - 2.5,
-        y: ship.y
-      });
+    draw() {
+      ctx.fillStyle = 'gray';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function initGame() {
+    ship = new Ship();
+    bullets = [];
+    rocks = [];
+    score = 0;
+    shootInterval = 0;
+    scoreDisplay.textContent = 'Score: 0';
+  }
+
+  function gameLoop() {
+    if (!gameRunning) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (bgLoaded) {
+      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    function endGame() {
-      gameRunning = false;
-      clearInterval(gameInterval);
-      clearInterval(laserInterval);
-      gameOverText.style.display = "block";
-      ui.style.display = "flex";
-      startButton.textContent = "Restart Game";
+    ship.update();
+    ship.draw();
+
+    shootInterval++;
+    if (shootInterval % 15 === 0) {
+      bullets.push(new Bullet(ship.x, ship.y - 20));
     }
 
-    canvas.addEventListener("mousemove", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      ship.x = e.clientX - rect.left - ship.width / 2;
+    bullets.forEach((b, i) => {
+      b.update();
+      b.draw();
+      if (b.y < 0) bullets.splice(i, 1);
     });
 
-    startButton.addEventListener("click", () => {
-      if (!gameRunning) {
-        gameOverText.style.display = "none";
-        ui.style.display = "none";
-        initGame();
-        gameRunning = true;
-        gameInterval = setInterval(spawnRock, 1000);
-        laserIn
+    if (Math.random() < 0.02) {
+      rocks.push(new Rock());
+    }
+
+    rocks.forEach((r, ri) => {
+      r.update();
+      r.draw();
+
+      bullets.forEach((b, bi) => {
+        let dx = r.x - b.x;
+        let dy = r.y - b.y;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < r.radius) {
+          rocks.splice(ri, 1);
+          bullets.splice(bi, 1);
+          score += 10;
+          scoreDisplay.textContent = 'Score: ' + score;
+        }
+      });
+
+      if (r.y > canvas.height) {
+        rocks.splice(ri, 1);
+      }
+    });
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  startButton.addEventListener('click', () => {
+    ui.style.display = 'none';
+    gameRunning = true;
+    initGame();
+    gameLoop();
+  });
+</script>
+</body>
+</html>
