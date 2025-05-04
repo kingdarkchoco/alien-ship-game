@@ -15,7 +15,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: white; /* Background is white */
+      background: white;
       font-family: Arial, sans-serif;
       color: black;
       display: flex;
@@ -25,7 +25,7 @@
     }
 
     #game {
-      background-color: black; /* Canvas background is black */
+      background-color: black;
       position: absolute;
     }
 
@@ -293,7 +293,13 @@
     touchY = e.touches[0].clientY;
   });
 
-  // Update mouseX and mouseY to touchX and touchY on mobile
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    touchX = canvas.width / 2;
+    touchY = canvas.height / 2;
+  });
+
+  // Update ship position based on touch/mouse
   function updateShipPosition() {
     mouseX = touchX - canvas.offsetLeft;
     mouseY = touchY - canvas.offsetTop;
@@ -309,19 +315,6 @@
   restartButton.addEventListener('click', () => {
     gameOverMenu.style.display = 'none';
     initGame();
-  });
-
-  // Adjust mouse/touch control for both desktop and mobile
-  function gameLoopWithTouch() {
-    updateShipPosition();
-    gameLoop();
-  }
-
-  startButton.addEventListener('click', () => {
-    startMenu.style.display = 'none';
-    gameOverMenu.style.display = 'none';
-    initGame();
-    gameLoopWithTouch();
   });
 
 </script>
