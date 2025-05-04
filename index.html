@@ -210,15 +210,11 @@
       return false;
     }
 
-    // Calculate score based on size
+    // Calculate score based on size and level
     calculateScore() {
-      if (this.isBig) {
-        // Big rocks give more points based on their size (bigger rocks get more points)
-        return Math.floor(15 + (this.radius - 30) / 3);
-      } else {
-        // Small rocks give smaller points
-        return 10;
-      }
+      let baseScore = this.isBig ? 15 + (this.radius - 30) / 3 : 10;
+      // Increase score based on the current level
+      return Math.floor(baseScore * (1 + level * 0.1));  // 10% increase per level
     }
   }
 
@@ -274,63 +270,4 @@
       r.draw();
 
       bullets.forEach((b, bi) => {
-        let dx = r.x - b.x;
-        let dy = r.y - b.y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < r.radius) {
-          if (r.hit()) {
-            score += r.calculateScore();  // Add score based on rock size
-            updateScore();
-            rocks.splice(ri, 1);
-            bullets.splice(bi, 1);
-          } else {
-            bullets.splice(bi, 1);  // Bullet only disappears if the rock is hit but not destroyed
-          }
-        }
-      });
-
-      let dx = r.x - ship.x;
-      let dy = r.y - ship.y;
-      let distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < r.radius + ship.size) {
-        gameOver();
-      }
-
-      if (r.y > canvas.height) {
-        rocks.splice(ri, 1);
-      }
-    });
-
-    requestAnimationFrame(gameLoop);
-  }
-
-  function gameOver() {
-    gameRunning = false;
-    if (score > highScore) {
-      highScore = score;
-      highScoreDisplay.textContent = "High Score: " + highScore;
-    }
-    gameOverMenu.style.display = 'flex';
-    finalScore.textContent = "Final Score: " + score;
-  }
-
-  canvas.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    mouseX = e.clientX - rect.left;
-    mouseY = e.clientY - rect.top;
-  });
-
-  startButton.addEventListener('click', () => {
-    startMenu.style.display = 'none';
-    gameOverMenu.style.display = 'none';
-    initGame();
-  });
-
-  restartButton.addEventListener('click', () => {
-    gameOverMenu.style.display = 'none';
-    initGame();
-  });
-</script>
-
-</body>
-</html>
+        let dx = r.x
