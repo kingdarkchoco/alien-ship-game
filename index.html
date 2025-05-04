@@ -174,13 +174,23 @@
       this.y = -40;
       this.radius = this.isBig ? 30 + Math.random() * 20 : 16 + Math.random() * 8;  // Bigger rocks have a larger radius
       this.hitPoints = this.isBig ? 3 : 1;  // Big rocks need 3 hits to destroy, small rocks need 1
-      this.speed = 1 + Math.random() * 1 + level * 0.3;
+      this.speed = this.calculateSpeed();  // Calculate speed based on size
       this.color = this.getColorByLevel(level);
     }
 
     getColorByLevel(level) {
       const colors = ['gray', 'darkorange', 'red', 'purple', 'gold', 'blue', 'green', 'white'];
       return colors[(level - 1) % colors.length];
+    }
+
+    calculateSpeed() {
+      if (this.isBig) {
+        // Slower speed for bigger rocks
+        return 1 + Math.random() * 0.5 + level * 0.2;
+      } else {
+        // Faster speed for smaller rocks
+        return 2 + Math.random() * 1 + level * 0.5;
+      }
     }
 
     update() {
@@ -198,6 +208,17 @@
       this.hitPoints--;
       if (this.hitPoints <= 0) return true;  // Return true if the rock should be destroyed
       return false;
+    }
+
+    // Calculate score based on size
+    calculateScore() {
+      if (this.isBig) {
+        // Big rocks give more points based on their size (bigger rocks get more points)
+        return Math.floor(15 + (this.radius - 30) / 3);
+      } else {
+        // Small rocks give smaller points
+        return 10;
+      }
     }
   }
 
@@ -258,7 +279,7 @@
         let distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < r.radius) {
           if (r.hit()) {
-            score += r.isBig ? 30 : 10;  // Big rocks give more points
+            score += r.calculateScore();  // Add score based on rock size
             updateScore();
             rocks.splice(ri, 1);
             bullets.splice(bi, 1);
