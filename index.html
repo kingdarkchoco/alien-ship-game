@@ -310,18 +310,6 @@
     initGame();
   });
 
-  // Main game loop with touch control
-  function gameLoopWithTouch() {
-    updateShipPosition();
-    gameLoop();
-  }
-
-  startButton.addEventListener('click', () => {
-    startMenu.style.display = 'none';
-    gameOverMenu.style.display = 'none';
-    initGame();
-    gameLoopWithTouch();
-  });
 </script>
 
 </body>
