@@ -17,10 +17,14 @@
       background: black;
       font-family: Arial, sans-serif;
       color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     #game {
       display: block;
+      background-color: black;
     }
 
     .overlay {
@@ -79,8 +83,13 @@
 <script>
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  
+  // Set a fixed size for the canvas
+  const canvasWidth = 800;
+  const canvasHeight = 600;
+
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
 
   const startMenu = document.getElementById('startMenu');
   const gameOverMenu = document.getElementById('gameOverMenu');
