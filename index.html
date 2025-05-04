@@ -81,7 +81,7 @@
   const phoneWidth = 375;
   const phoneHeight = 667;
 
-  // For desktop: fixed size canvas (phone size) and center it
+  // Resize function to handle mobile and desktop screens
   function adjustCanvasSize() {
     if (window.innerWidth <= 768) { // Mobile screens
       canvas.width = window.innerWidth;
@@ -89,7 +89,7 @@
     } else { // Desktop screens
       canvas.width = phoneWidth;
       canvas.height = phoneHeight;
-      canvas.style.margin = "auto";
+      canvas.style.margin = "auto";  // Center the canvas on the screen
     }
   }
 
@@ -303,11 +303,25 @@
     startMenu.style.display = 'none';
     gameOverMenu.style.display = 'none';
     initGame();
+    gameLoop();
   });
 
   restartButton.addEventListener('click', () => {
     gameOverMenu.style.display = 'none';
     initGame();
+  });
+
+  // Adjust mouse/touch control for both desktop and mobile
+  function gameLoopWithTouch() {
+    updateShipPosition();
+    gameLoop();
+  }
+
+  startButton.addEventListener('click', () => {
+    startMenu.style.display = 'none';
+    gameOverMenu.style.display = 'none';
+    initGame();
+    gameLoopWithTouch();
   });
 
 </script>
